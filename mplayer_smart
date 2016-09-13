@@ -1,0 +1,68 @@
+#!/bin/bash
+#links subtitles with videos
+#if #videos >= #subtitles, the first #subtitles videos are linked with one subtitle each
+#if #videos <= #subtitles, the remaining subtitles are linked to the last video
+
+contains() {
+    string="$1"
+    substring="$2"
+    if test "${string#*$substring}" != "$string"
+    then
+        return 0    # $substring is in $string
+    else
+        return 1    # $substring is not in $string
+    fi
+}
+
+I=1
+K=0 #video index
+J=0 #subtitle index
+
+while [[ $I -le $#  ]]; do
+
+	#if (contains "apple" "ap"); then
+	if (contains "${!I}" ".srt" || contains "${!I}" ".sub"); then
+		((J++))
+		SUB[$J]="${!I}"
+		
+	else
+		((K++))
+		VID[$K]="${!I}"
+		
+	fi
+
+	((I++))
+done
+
+SMALL=-1
+if [[ $K -ge $J ]]; then
+	SMALL=$J
+else
+	SMALL=$K
+fi
+
+I=1
+CM="mplayer"
+while [ $I -le $SMALL ]; do
+	CM="$CM \"${VID[$I]}\" -sub \"${SUB[$I]}\""
+	((I++))
+done
+
+while [[ $I -le $J ]]; do
+
+	CM="$CM,\"${SUB[$I]}\""
+	((I++))
+	#statements
+done
+
+while [[ $I -le $K ]]; do
+	CM="$CM \"${VID[$I]}\""
+	((I++))
+	#statements
+done
+
+TEMP=~/.mplayer_smart_temp
+echo $CM > $TEMP
+chmod +x $TEMP
+$TEMP
+rm $TEMP
